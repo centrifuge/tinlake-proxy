@@ -2,13 +2,13 @@ pragma solidity ^0.5.10;
 
 import "ds-test/test.sol";
 
-import "./TinlakeActions.sol";
+import "./proxy.sol";
 
-contract TinlakeActionsTest is DSTest {
-    TinlakeActions actions;
+contract ProxyTest is DSTest {
+    Proxy proxy;
 
     function setUp() public {
-        actions = new TinlakeActions();
+        proxy = new Proxy();
     }
 
     function testFail_basic_sanity() public {

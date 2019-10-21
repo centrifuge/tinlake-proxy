@@ -1,4 +1,8 @@
 pragma solidity ^0.5.10;
 
-contract TinlakeActions {
+contract Proxy {
+
+
+
 }
+
