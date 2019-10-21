@@ -17,11 +17,14 @@
 
 pragma solidity >=0.5.0 <0.6.0;
 
+import "tinlake/title.sol";
+
 // Original DSProxy https://github.com/dapphub/ds-proxy
-contract Proxy {
+contract Proxy is TitleOwned {
+    uint public accessToken;
 
-    constructor() public {
-
+    constructor(address title_, uint accessToken_) TitleOwned(title_) public {
+        accessToken = accessToken_;
     }
 
     function() external payable {
@@ -30,6 +33,7 @@ contract Proxy {
     function execute(address _target, bytes memory _data)
     public
     payable
+    owner(accessToken)
     returns (bytes memory response)
     {
         require(_target != address(0), "ds-proxy-target-address-required");
@@ -53,14 +57,23 @@ contract Proxy {
     }
 }
 
-// DSProxyFactory
+contract TitleLike_ {
+    function count() public returns(uint);
+    function issue(address usr) public returns(uint);
+}
+
+
+// ProxyFactory
 // This factory deploys new proxy instances through build()
 // Deployed proxy addresses are logged
-contract DSProxyFactory {
+contract ProxyFactory {
     event Created(address indexed sender, address indexed owner, address proxy);
     mapping(address=>bool) public isProxy;
 
-    constructor() public {
+    TitleLike_ title;
+
+    constructor(address title_) public {
+        title = TitleLike_(title_);
     }
 
     // deploys a new proxy instance
@@ -72,11 +85,12 @@ contract DSProxyFactory {
     // deploys a new proxy instance
     // sets custom owner of proxy
     function build(address owner) public returns (address payable proxy) {
-        proxy = address(new Proxy());
-        emit Created(msg.sender, owner, address(proxy));
+        uint id = title.count();
+        proxy = address(new Proxy(address(title), id));
+        uint token = title.issue(owner);
+        require(id == token);
 
-        // todo create NFT with correct owner
-       // Proxy(proxy).setOwner(owner);
+        emit Created(msg.sender, owner, address(proxy));
         isProxy[proxy] = true;
     }
 }
