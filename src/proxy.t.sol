@@ -28,6 +28,11 @@ contract SimpleAction {
     function doAdd(address core_, uint256 a, uint256 b) public returns (uint256) {
         return SimpleCore(core_).add(a,b);
     }
+
+    function doAdd(uint256 a, uint256 b) public returns (uint256) {
+        return core.add(a,b);
+    }
+
     function coreAddr() public returns(address) {
         return address(core);
     }
@@ -79,7 +84,16 @@ contract ProxyTest is DSTest {
 
     }
 
-    function testFailExecute() public {
+    function testFailExecuteAccessActionStorage() public {
+        address payable proxyAddr = factory.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        // using action contract storage should fail
+        bytes memory data = abi.encodeWithSignature("doAdd(uint256,uint256)", address(core), 5,7);
+        bytes memory response = proxy.execute(address(action), data);
+    }
+
+    function testFailExecuteNotNFTOwner() public {
         address payable proxyAddr = factory.build();
         Proxy proxy = Proxy(proxyAddr);
 
