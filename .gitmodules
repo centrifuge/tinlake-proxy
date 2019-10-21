@@ -1,3 +1,6 @@
 [submodule "lib/ds-test"]
 	path = lib/ds-test
 	url = https://github.com/dapphub/ds-test
+[submodule "lib/tinlake"]
+	path = lib/tinlake
+	url = https://github.com/centrifuge/tinlake
