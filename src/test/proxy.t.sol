@@ -2,7 +2,7 @@ pragma solidity ^0.5.10;
 
 import "ds-test/test.sol";
 
-import "./proxy.sol";
+import "../proxy.sol";
 import "tinlake/title.sol";
 
 
