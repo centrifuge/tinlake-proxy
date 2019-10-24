@@ -1,21 +1,20 @@
-// proxy.sol - execute actions atomically through the proxy's identity
-
-// Copyright (C) 2017  DappHub, LLC
+// proxy.sol -- proxy contract for delegate calls
+// Copyright (C) 2019 Centrifuge
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-pragma solidity >=0.5.0 <0.6.0;
+pragma solidity >=0.4.24;
 
 import "tinlake/title.sol";
 
@@ -54,6 +53,24 @@ contract Proxy is TitleOwned {
                 revert(add(response, 0x20), size)
             }
         }
+    }
+
+    function execute(bytes memory _code, bytes memory _data)
+    public
+    payable
+    owner(accessToken)
+    returns (address target, bytes memory response)
+    {
+        assembly {
+            target := create(0, add(_code, 0x20), mload(_code))
+            switch iszero(extcodesize(target))
+            case 1 {
+            // throw if contract failed to deploy
+                revert(0, 0)
+            }
+        }
+
+       response = execute(target, _data);
     }
 }
 
