@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.0 <0.6.0;
+pragma solidity >=0.4.24;
 
 // Original DSProxy https://github.com/dapphub/ds-proxy
 contract Proxy {
