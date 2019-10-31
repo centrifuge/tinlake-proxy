@@ -11,6 +11,7 @@ import "tinlake/test/mock/shelf.sol";
 import "tinlake/test/mock/pile.sol";
 import "tinlake/test/mock/desk.sol";
 
+pragma solidity >=0.4.24;
 
 contract RegistryTest is DSTest {
     ProxyRegistry registry;
