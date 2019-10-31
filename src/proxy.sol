@@ -94,13 +94,12 @@ contract ProxyFactory {
     }
 
     // deploys a new proxy instance
-    // sets owner of proxy to caller
     function build() public returns (address payable proxy) {
         proxy = build(msg.sender);
     }
 
     // deploys a new proxy instance
-    // sets custom owner of proxy
+    // sets custom owner of proxy by issuing an accessToken NFT
     function build(address owner) public returns (address payable proxy) {
         uint id = title.count();
         proxy = address(new Proxy(address(title), id));
