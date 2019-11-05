@@ -28,7 +28,7 @@ contract ShelfLike {
 
 contract PileLike {
     function withdraw(uint loan, uint wad, address usr) public;
-    function repay(uint loan, uint wad, address usr) public ;
+    function repay(uint loan, uint wad) public ;
     function balanceOf(uint loan) public view returns (uint);
     function collect(uint loan) public;
     function loans(uint loan) public returns (uint debt, uint balance, uint fee, uint chi);
@@ -51,7 +51,7 @@ contract Reception {
     }
 
     function repay(address desk_, address pile_, address shelf_, uint loan, uint wad, address usr) public {
-        PileLike(pile_).repay(loan,wad, msg.sender);
+        PileLike(pile_).repay(loan, wad);
         ShelfLike(shelf_).release(loan, usr);
         DeskLike(desk_).balance();
     }

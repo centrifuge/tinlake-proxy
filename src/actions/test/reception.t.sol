@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity >=0.4.24;
 
 import "ds-test/test.sol";
 
@@ -10,8 +10,6 @@ import "../../registry.sol";
 import "tinlake/test/mock/shelf.sol";
 import "tinlake/test/mock/pile.sol";
 import "tinlake/test/mock/desk.sol";
-
-pragma solidity >=0.4.24;
 
 contract RegistryTest is DSTest {
     ProxyRegistry registry;
@@ -64,7 +62,6 @@ contract RegistryTest is DSTest {
         assertEq(pile.callsRepay(), 1);
         assertEq(pile.loan(), loan);
         assertEq(pile.wad(), debt);
-        assertEq(pile.usr(), address(this));
 
         assertEq(shelf.releaseCalls(), 1);
         assertEq(shelf.loan(), loan);
