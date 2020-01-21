@@ -23,7 +23,9 @@ contract CacheLike {
     function write(bytes memory _code) public returns (address target);
 }
 
-// Original DSProxy https://github.com/dapphub/ds-proxy
+// Proxy is a proxy contract that is controlled by a Title NFT (see tinlake-title)
+// The proxy execute methods are copied from ds-proxy/src/proxy.sol:DSProxy
+// (see https://github.com/dapphub/ds-proxy)
 contract Proxy is TitleOwned {
     uint public      accessToken;
     CacheLike public cache;
@@ -83,7 +85,6 @@ contract Proxy is TitleOwned {
 // Deployed proxy addresses are logged
 contract ProxyRegistry is Title {
     event Created(address indexed sender, address indexed owner, address proxy);
-    mapping (address => bool) public isProxy;
     mapping (uint => address) public proxies;
 
     constructor() Title("Tinlake Actions Access Token", "TAAT") public {
@@ -95,15 +96,16 @@ contract ProxyRegistry is Title {
     }
 
     // deploys a new proxy instance
-    // sets custom owner of proxy by issuing an accessToken NFT
+    // sets custom owner of proxy by issuing an Title NFT
     function build(address owner) public returns (address payable proxy) {
         uint token = _issue(owner);
         proxy = address(new Proxy(token));
-
-        isProxy[proxy] = true;
         proxies[token] = proxy;
         emit Created(msg.sender, owner, proxy);
     }
+
+    // --- Cache ---
+    // Copied from ds-proxy/src/proxy.sol:DSProxyCache
     mapping (bytes32 => address) public cache;
 
     function read(bytes memory _code) public view returns (address) {
@@ -123,5 +125,4 @@ contract ProxyRegistry is Title {
         bytes32 hash = keccak256(_code);
         cache[hash] = target;
     }
-
 }
