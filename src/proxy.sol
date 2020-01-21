@@ -16,13 +16,20 @@
 
 pragma solidity >=0.4.24;
 
-import "tinlake/title.sol";
+import { Title, TitleOwned, TitleLike } from "tinlake-title/title.sol";
+
+contract CacheLike {
+    function read(bytes memory _code) public view returns (address);
+    function write(bytes memory _code) public returns (address target);
+}
 
 // Original DSProxy https://github.com/dapphub/ds-proxy
 contract Proxy is TitleOwned {
-    uint public accessToken;
+    uint public      accessToken;
+    CacheLike public cache;
 
-    constructor(address title_, uint accessToken_) TitleOwned(title_) public {
+    constructor(uint accessToken_) TitleOwned(msg.sender) public {
+        cache = CacheLike(msg.sender);
         accessToken = accessToken_;
     }
 
@@ -35,7 +42,7 @@ contract Proxy is TitleOwned {
     owner(accessToken)
     returns (bytes memory response)
     {
-        require(_target != address(0), "ds-proxy-target-address-required");
+        require(_target != address(0), "tinlake/proxy-target-address-required");
 
         // call contract in current context
         assembly {
@@ -61,36 +68,25 @@ contract Proxy is TitleOwned {
     owner(accessToken)
     returns (address target, bytes memory response)
     {
-        assembly {
-            target := create(0, add(_code, 0x20), mload(_code))
-            switch iszero(extcodesize(target))
-            case 1 {
-            // throw if contract failed to deploy
-                revert(0, 0)
-            }
+        target = cache.read(_code);
+        if (target == address(0)) {
+            // deploy contract & store its address in cache
+            target = cache.write(_code);
         }
 
-       response = execute(target, _data);
+        response = execute(target, _data);
     }
 }
 
-contract TitleLike_ {
-    function count() public returns(uint);
-    function issue(address usr) public returns(uint);
-}
-
-
-// ProxyFactory
+// ProxyRegistry
 // This factory deploys new proxy instances through build()
 // Deployed proxy addresses are logged
-contract ProxyFactory {
+contract ProxyRegistry is Title {
     event Created(address indexed sender, address indexed owner, address proxy);
-    mapping(address=>bool) public isProxy;
+    mapping (address => bool) public isProxy;
+    mapping (uint => address) public proxies;
 
-    TitleLike_ title;
-
-    constructor(address title_) public {
-        title = TitleLike_(title_);
+    constructor() Title("Tinlake Actions Access Token", "TAAT") public {
     }
 
     // deploys a new proxy instance
@@ -101,12 +97,31 @@ contract ProxyFactory {
     // deploys a new proxy instance
     // sets custom owner of proxy by issuing an accessToken NFT
     function build(address owner) public returns (address payable proxy) {
-        uint id = title.count();
-        proxy = address(new Proxy(address(title), id));
-        uint token = title.issue(owner);
-        require(id == token);
+        uint token = _issue(owner);
+        proxy = address(new Proxy(token));
 
-        emit Created(msg.sender, owner, address(proxy));
         isProxy[proxy] = true;
+        proxies[token] = proxy;
+        emit Created(msg.sender, owner, proxy);
     }
+    mapping (bytes32 => address) public cache;
+
+    function read(bytes memory _code) public view returns (address) {
+        bytes32 hash = keccak256(_code);
+        return cache[hash];
+    }
+
+    function write(bytes memory _code) public returns (address target) {
+        assembly {
+            target := create(0, add(_code, 0x20), mload(_code))
+            switch iszero(extcodesize(target))
+            case 1 {
+                // throw if contract failed to deploy
+                revert(0, 0)
+            }
+        }
+        bytes32 hash = keccak256(_code);
+        cache[hash] = target;
+    }
+
 }
