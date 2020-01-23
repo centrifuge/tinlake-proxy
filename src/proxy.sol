@@ -18,20 +18,20 @@ pragma solidity >=0.4.24;
 
 import { Title, TitleOwned, TitleLike } from "tinlake-title/title.sol";
 
-contract CacheLike {
-    function read(bytes memory _code) public view returns (address);
-    function write(bytes memory _code) public returns (address target);
+contract RegistryLike {
+    function cacheRead(bytes memory _code) public view returns (address);
+    function cacheWrite(bytes memory _code) public returns (address target);
 }
 
 // Proxy is a proxy contract that is controlled by a Title NFT (see tinlake-title)
 // The proxy execute methods are copied from ds-proxy/src/proxy.sol:DSProxy
 // (see https://github.com/dapphub/ds-proxy)
 contract Proxy is TitleOwned {
-    uint public      accessToken;
-    CacheLike public cache;
+    uint public         accessToken;
+    RegistryLike public registry;
 
     constructor(uint accessToken_) TitleOwned(msg.sender) public {
-        cache = CacheLike(msg.sender);
+        registry = RegistryLike(msg.sender);
         accessToken = accessToken_;
     }
 
@@ -70,10 +70,10 @@ contract Proxy is TitleOwned {
     owner(accessToken)
     returns (address target, bytes memory response)
     {
-        target = cache.read(_code);
+        target = registry.cacheRead(_code);
         if (target == address(0)) {
             // deploy contract & store its address in cache
-            target = cache.write(_code);
+            target = registry.cacheWrite(_code);
         }
 
         response = execute(target, _data);
@@ -108,12 +108,12 @@ contract ProxyRegistry is Title {
     // Copied from ds-proxy/src/proxy.sol:DSProxyCache
     mapping (bytes32 => address) public cache;
 
-    function read(bytes memory _code) public view returns (address) {
+    function cacheRead(bytes memory _code) public view returns (address) {
         bytes32 hash = keccak256(_code);
         return cache[hash];
     }
 
-    function write(bytes memory _code) public returns (address target) {
+    function cacheWrite(bytes memory _code) public returns (address target) {
         assembly {
             target := create(0, add(_code, 0x20), mload(_code))
             switch iszero(extcodesize(target))
