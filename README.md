@@ -1,5 +1,5 @@
 # tinlake-proxy
-**This code is mostly copied from [ds-proxy](https://github.com/dapphub/ds-proxy). It has only been extended to allow for authentication with an NFT ownership check**
+**This code is mostly copied from [ds-proxy](https://github.com/dapphub/ds-proxy). It has only been extended to allow for authentication with an NFT ownership check.**
 
 ![Proxy Call Graph](./proxy_actions_graph.svg)
 
