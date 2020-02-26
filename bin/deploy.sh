@@ -1,3 +1,0 @@
-# run testnet
-# dapp testnet
-
