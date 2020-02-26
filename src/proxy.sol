@@ -84,7 +84,7 @@ contract Proxy is TitleOwned {
 // This factory deploys new proxy instances through build()
 // Deployed proxy addresses are logged
 contract ProxyRegistry is Title {
-    event Created(address indexed sender, address indexed owner, address proxy);
+    event Created(address indexed sender, address indexed owner, address proxy, uint tokenId);
     mapping (uint => address) public proxies;
 
     constructor() Title("Tinlake Actions Access Token", "TAAT") public {
@@ -101,7 +101,7 @@ contract ProxyRegistry is Title {
         uint token = _issue(owner);
         proxy = address(new Proxy(token));
         proxies[token] = proxy;
-        emit Created(msg.sender, owner, proxy);
+        emit Created(msg.sender, owner, proxy, token);
     }
 
     // --- Cache ---
