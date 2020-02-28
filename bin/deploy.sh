@@ -1,4 +1,4 @@
-PROXY_BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
+PROXY_BIN_DIR=${PROXY_BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 
 # src env for contract deployment
 source $PROXY_BIN_DIR/util.sh
