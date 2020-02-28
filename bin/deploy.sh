@@ -11,6 +11,7 @@ export PROXY_REGISTRY=$(seth send --create ./out/ProxyRegistry.bin 'ProxyRegistr
 message Proxy Registry Address: $PROXY_REGISTRY
 
 cd $PROXY_BIN_DIR
+
 DEPLOYMENT_FILE=../deployments/addresses_$(seth chain).json
 
 touch $DEPLOYMENT_FILE
