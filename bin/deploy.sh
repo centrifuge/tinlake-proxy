@@ -5,7 +5,6 @@ source $BIN_DIR/util.sh
 source $BIN_DIR/test/local_env.sh
 
 # create address file and build contracts
-
 dapp update && dapp build --extract
 
 export PROXY_REGISTRY=$(seth send --create ./out/ProxyRegistry.bin 'ProxyRegistry()')
