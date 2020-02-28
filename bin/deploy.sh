@@ -1,11 +1,11 @@
 BIN_DIR=${BIN_DIR:-$(cd "${1%/*}"&&pwd)}
 
 # src env for contract deployment
-source ./bin/util.sh
-source ./bin/test/local_env.sh
+source $BIN_DIR/bin/util.sh
+source $BIN_DIR/bin/test/local_env.sh
 
 # create address file and build contracts
-touch ./bin/test/addresses.json
+touch $BIN_DIR/bin/test/addresses.json
 
 dapp update && dapp build --extract
 
