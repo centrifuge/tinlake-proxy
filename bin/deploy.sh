@@ -4,7 +4,6 @@ BIN_DIR=${BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 source $BIN_DIR/util.sh
 source $BIN_DIR/test/local_env.sh
 
-
 # create address file and build contracts
 touch $BIN_DIR/test/addresses.json
 
