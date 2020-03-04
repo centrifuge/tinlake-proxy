@@ -7,12 +7,16 @@ source $PROXY_BIN_DIR/test/local_env.sh
 # create address file and build contracts
 dapp update && dapp build --extract
 
+# create deployment folder
+mkdir $PROXY_BIN_DIR/../deployments
+
+
 export PROXY_REGISTRY=$(seth send --create ./out/ProxyRegistry.bin 'ProxyRegistry()')
 message Proxy Registry Address: $PROXY_REGISTRY
 
 cd $PROXY_BIN_DIR
 
-DEPLOYMENT_FILE=../deployments/addresses_$(seth chain).json
+DEPLOYMENT_FILE=$PROXY_BIN_DIR/../deployments/addresses_$(seth chain).json
 
 touch $DEPLOYMENT_FILE
 
