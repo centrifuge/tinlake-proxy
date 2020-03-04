@@ -1,4 +1,4 @@
 out
 .idea
 bin/test/addresses.json
-deployments/
+deployments
