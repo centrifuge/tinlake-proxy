@@ -111,7 +111,7 @@ contract ProxyTest is DSTest {
         bytes memory data = abi.encodeWithSignature("getBytes32AndUint()");
 
         //deploy and call the contracts code
-        (, bytes memory response) = proxy.executeWithoutAddress(testCode, data);
+        (, bytes memory response) = proxy.executeByteCode(testCode, data);
 
         bytes32 response32;
         uint responseUint;
