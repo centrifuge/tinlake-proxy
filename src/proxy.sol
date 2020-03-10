@@ -64,7 +64,7 @@ contract Proxy is TitleOwned {
         }
     }
 
-    function execute(bytes memory _code, bytes memory _data)
+    function executeByteCode(bytes memory _code, bytes memory _data)
     public
     payable
     owner(accessToken)
