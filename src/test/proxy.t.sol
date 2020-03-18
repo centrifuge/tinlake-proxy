@@ -63,6 +63,22 @@ contract ProxyTest is DSTest {
         assertEq(proxy.accessToken(), 2);
     }
 
+    function testFailInit() public {
+        address payable proxy = registry.build();
+        Proxy(proxy).init(123);
+    }
+
+    function testCreate2() public {
+        address payable proxy = registry.build();
+        uint a = Proxy(proxy).accessToken();
+        assertEq(proxy, registry.proxies(a));
+
+        // second address
+        address payable proxyB = registry.build();
+        uint b = Proxy(proxyB).accessToken();
+        assertEq(proxyB, registry.proxies(b));
+    }
+
     function testExecute() public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
