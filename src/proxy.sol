@@ -94,6 +94,8 @@ contract ProxyRegistry is Title {
 
     event Created(address indexed sender, address indexed owner, address proxy, uint tokenId);
 
+
+    // calculates the proxy address based on the accessToken
     function proxies(uint accessToken) public view returns(address) {
         // create2 address calculation
         // keccak256(0xff ++ deployingAddr ++ salt ++ keccak256(bytecode))[12:]
