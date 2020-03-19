@@ -35,6 +35,7 @@ contract Proxy is TitleOwned {
     }
 
     function init(uint accessToken_) public {
+        // parameter accessToken_: always > 0
         require(accessToken == 0);
         accessToken = accessToken_;
     }
