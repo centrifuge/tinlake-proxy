@@ -128,7 +128,7 @@ contract ProxyRegistry is Title {
         bytes memory code = proxyCode;
         assembly {
             proxy := create2(0, add(code, 0x20), mload(code), salt)
-            if iszero(extcodesize(addr)) { revert(0, 0) }
+            if iszero(extcodesize(proxy)) { revert(0, 0) }
         }
         // init proxy contract
         Proxy(proxy).init(uint(accessToken));
