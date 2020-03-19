@@ -97,6 +97,9 @@ contract ProxyRegistry is Title {
     function proxies(uint accessToken) public view returns(address) {
         // create2 address calculation
         // keccak256(0xff ++ deployingAddr ++ salt ++ keccak256(bytecode))[12:]
+
+        // constructor without parameters results in the same proxyCodeHash for all proxies
+        // expensive rehashing not required
         bytes32 _data = keccak256(
             abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encodePacked(accessToken)), proxyCodeHash)
         );
@@ -118,20 +121,16 @@ contract ProxyRegistry is Title {
     function build(address owner) public returns (address payable proxy) {
         uint accessToken = _issue(owner);
         bytes32 salt = keccak256(abi.encodePacked(accessToken));
-        proxy = deploy(accessToken, salt);
-        emit Created(msg.sender, owner, proxy, accessToken);
-    }
 
-
-    /// uses the create2 opcode to deploy a proxy contract
-    function deploy(uint accessToken, bytes32 salt) internal returns (address payable addr) {
         bytes memory code = proxyCode;
         assembly {
-            addr := create2(0, add(code, 0x20), mload(code), salt)
+            proxy := create2(0, add(code, 0x20), mload(code), salt)
             if iszero(extcodesize(addr)) { revert(0, 0) }
         }
-        // init contract
-        Proxy(addr).init(uint(accessToken));
+        // init proxy contract
+        Proxy(proxy).init(uint(accessToken));
+
+        emit Created(msg.sender, owner, proxy, accessToken);
     }
 
     // --- Cache ---
