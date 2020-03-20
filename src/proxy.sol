@@ -30,8 +30,13 @@ contract Proxy is TitleOwned {
     uint public         accessToken;
     RegistryLike public registry;
 
-    constructor(uint accessToken_) TitleOwned(msg.sender) public {
+    constructor() TitleOwned(msg.sender) public {
         registry = RegistryLike(msg.sender);
+    }
+
+    function init(uint accessToken_) public {
+        // parameter accessToken_: always > 0
+        require(accessToken == 0);
         accessToken = accessToken_;
     }
 
@@ -64,7 +69,7 @@ contract Proxy is TitleOwned {
         }
     }
 
-    function execute(bytes memory _code, bytes memory _data)
+    function executeByteCode(bytes memory _code, bytes memory _data)
     public
     payable
     owner(accessToken)
@@ -84,10 +89,28 @@ contract Proxy is TitleOwned {
 // This factory deploys new proxy instances through build()
 // Deployed proxy addresses are logged
 contract ProxyRegistry is Title {
-    event Created(address indexed sender, address indexed owner, address proxy, uint tokenId);
-    mapping (uint => address) public proxies;
 
-    constructor() Title("Tinlake Actions Access Token", "TAAT") public {
+    bytes32 proxyCodeHash;
+    bytes public proxyCode;
+
+    event Created(address indexed sender, address indexed owner, address proxy, uint tokenId);
+
+    constructor() Title("Tinlake Proxy Access Token", "TAAT") public {
+        proxyCode = type(Proxy).creationCode;
+        proxyCodeHash = keccak256(abi.encodePacked(proxyCode));
+    }
+
+    // calculates the proxy address based on the accessToken
+    function proxies(uint accessToken) public view returns(address) {
+        // create2 address calculation
+        // keccak256(0xff ++ deployingAddr ++ salt ++ keccak256(bytecode))[12:]
+
+        // Using a constructor without parameters results in the same proxyCodeHash for all proxies
+        // expensive rehashing not required. Not having to hash the entire contract byte code saves around 80k gas.
+        bytes32 _data = keccak256(
+            abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encodePacked(accessToken)), proxyCodeHash)
+        );
+        return address(bytes20(_data << 96));
     }
 
     // deploys a new proxy instance
@@ -98,10 +121,18 @@ contract ProxyRegistry is Title {
     // deploys a new proxy instance
     // sets custom owner of proxy by issuing an Title NFT
     function build(address owner) public returns (address payable proxy) {
-        uint token = _issue(owner);
-        proxy = address(new Proxy(token));
-        proxies[token] = proxy;
-        emit Created(msg.sender, owner, proxy, token);
+        uint accessToken = _issue(owner);
+        bytes32 salt = keccak256(abi.encodePacked(accessToken));
+
+        bytes memory code = proxyCode;
+        assembly {
+            proxy := create2(0, add(code, 0x20), mload(code), salt)
+            if iszero(extcodesize(proxy)) { revert(0, 0) }
+        }
+        // init proxy contract
+        Proxy(proxy).init(uint(accessToken));
+
+        emit Created(msg.sender, owner, proxy, accessToken);
     }
 
     // --- Cache ---
