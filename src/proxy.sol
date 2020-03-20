@@ -101,7 +101,7 @@ contract ProxyRegistry is Title {
         // create2 address calculation
         // keccak256(0xff ++ deployingAddr ++ salt ++ keccak256(bytecode))[12:]
 
-        // constructor without parameters results in the same proxyCodeHash for all proxies
+        // Using a constructor without parameters results in the same proxyCodeHash for all proxies
         // expensive rehashing not required
         bytes32 _data = keccak256(
             abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encodePacked(accessToken)), proxyCodeHash)
