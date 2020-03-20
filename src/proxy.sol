@@ -95,6 +95,10 @@ contract ProxyRegistry is Title {
 
     event Created(address indexed sender, address indexed owner, address proxy, uint tokenId);
 
+    constructor() Title("Tinlake Proxy Access Token", "TAAT") public {
+        proxyCode = type(Proxy).creationCode;
+        proxyCodeHash = keccak256(abi.encodePacked(proxyCode));
+    }
 
     // calculates the proxy address based on the accessToken
     function proxies(uint accessToken) public view returns(address) {
@@ -107,11 +111,6 @@ contract ProxyRegistry is Title {
             abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encodePacked(accessToken)), proxyCodeHash)
         );
         return address(bytes20(_data << 96));
-    }
-
-    constructor() Title("Tinlake Proxy Access Token", "TAAT") public {
-        proxyCode = type(Proxy).creationCode;
-        proxyCodeHash = keccak256(abi.encodePacked(proxyCode));
     }
 
     // deploys a new proxy instance
