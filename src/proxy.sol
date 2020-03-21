@@ -113,6 +113,11 @@ contract ProxyRegistry is Title {
         return address(bytes20(_data << 96));
     }
 
+    // returns true, if the provided address is a proxy that was created by the registry contract
+    function isProxy(address proxy) public returns (bool) {
+        return proxies(Proxy(proxy).accessToken()) == proxy;
+    }
+
     // deploys a new proxy instance
     function build() public returns (address payable proxy) {
         proxy = build(msg.sender);
