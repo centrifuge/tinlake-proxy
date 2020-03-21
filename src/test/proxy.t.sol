@@ -37,6 +37,12 @@ contract SimpleAction {
     }
 }
 
+contract FakeProxy {
+    function accessToken() public returns(uint) {
+        return 2;
+    }
+}
+
 contract ProxyTest is DSTest {
     ProxyRegistry registry;
     SimpleCore    core;
@@ -66,6 +72,21 @@ contract ProxyTest is DSTest {
     function testFailInit() public {
         address payable proxy = registry.build();
         Proxy(proxy).init(123);
+    }
+
+    function testIsProxy() public {
+        address payable proxy = registry.build();
+        assertTrue(registry.isProxy(proxy));
+
+        // has access token id  2
+        FakeProxy fp = new FakeProxy();
+        address payable fakeProxyAddress =address(uint160(address(fp)));
+        assertTrue(!registry.isProxy(fakeProxyAddress));
+
+        // has access token id 2
+        address payable realProxy = registry.build();
+        assertTrue(!registry.isProxy(fakeProxyAddress));
+        assertTrue(registry.isProxy(realProxy));
     }
 
     function testCreate2() public {

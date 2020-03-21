@@ -114,7 +114,7 @@ contract ProxyRegistry is Title {
     }
 
     // returns true, if the provided address is a proxy that was created by the registry contract
-    function isProxy(address proxy) public returns (bool) {
+    function isProxy(address payable proxy) public returns (bool) {
         return proxies(Proxy(proxy).accessToken()) == proxy;
     }
 
