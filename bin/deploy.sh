@@ -1,3 +1,5 @@
+#! /usr/bin/env bash
+
 PROXY_BIN_DIR=${PROXY_BIN_DIR:-$(cd "${0%/*}"&&pwd)}
 cd $PROXY_BIN_DIR
 # src env for contract deployment
@@ -7,11 +9,11 @@ source $PROXY_BIN_DIR/util.sh
 
 cd $PROXY_BIN_DIR/../
 
-dapp update && dapp build --extract
+dapp update && dapp --use solc:0.5.15 build --extract
 
 cd $PROXY_BIN_DIR
 # create deployment folder
-mkdir $PROXY_BIN_DIR/../deployments
+mkdir -p $PROXY_BIN_DIR/../deployments
 
 export PROXY_REGISTRY=$(seth send --create $PROXY_BIN_DIR/../out/ProxyRegistry.bin 'ProxyRegistry()')
 message Proxy Registry Address: $PROXY_REGISTRY
