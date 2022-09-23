@@ -8,3 +8,6 @@
 [submodule "lib/tinlake-title"]
 	path = lib/tinlake-title
 	url = https://github.com/centrifuge/tinlake-title
+[submodule "lib/tinlake-auth"]
+	path = lib/tinlake-auth
+	url = https://github.com/centrifuge/tinlake-auth
