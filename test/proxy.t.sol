@@ -1,6 +1,7 @@
 pragma solidity >=0.5.15 <0.6.0;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
+import 
 
 import "../proxy.sol";
 
