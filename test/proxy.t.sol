@@ -1,9 +1,7 @@
-pragma solidity >=0.5.15 <0.6.0;
+pragma solidity >=0.6.0 < 0.9.0;
 
 import "forge-std/Test.sol";
-import 
-
-import "../proxy.sol";
+import "../src/proxy.sol";
 
 
 contract SimpleCore {
@@ -55,29 +53,8 @@ contract ProxyTest is DSTest {
 
     function testBuildProxy() public {
         address payable first = registry.build();
-        Proxy proxy = Proxy(first);
-        assertEq(proxy.accessToken(), 1);
-
         address payable second = registry.build();
         assertTrue(first != second);
-        proxy = Proxy(second);
-        assertEq(proxy.accessToken(), 2);
-    }
-
-    function testFailInit() public {
-        address payable proxy = registry.build();
-        Proxy(proxy).init(123);
-    }
-
-    function testCreate2() public {
-        address payable proxy = registry.build();
-        uint a = Proxy(proxy).accessToken();
-        assertEq(proxy, registry.proxies(a));
-
-        // second address
-        address payable proxyB = registry.build();
-        uint b = Proxy(proxyB).accessToken();
-        assertEq(proxyB, registry.proxies(b));
     }
 
     function testExecute() public {
@@ -86,60 +63,95 @@ contract ProxyTest is DSTest {
 
         bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
 
+        // set action as a safe target
+        proxy.safe(address(action));
+
+        // Add this as a user so it can execute
+        proxy.addUser(address(this));
+
         // action not calling other method
-        bytes memory response = proxy.execute(address(action), data);
+        bytes memory response = proxy.userExecute(address(action), data);
 
         // using core
         data = abi.encodeWithSignature("doAdd(address,uint256,uint256)", address(core), 5,7);
-        response = proxy.execute(address(action), data);
+        response = proxy.userExecute(address(action), data);
 
         // msg.sender should be proxy address
         assertEq(core.caller(), proxyAddr);
+    }
 
+    function testFailExecuteNotUser() public {
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
+
+        // set action as a safe target
+        proxy.safe(address(action));
+
+        // Add this as a user so it can execute
+        // proxy.addUser(address(this));
+
+        // action not calling other method
+        bytes memory response = proxy.userExecute(address(action), data);
+
+        // using core
+        data = abi.encodeWithSignature("doAdd(address,uint256,uint256)", address(core), 5,7);
+        response = proxy.userExecute(address(action), data);
+
+        // msg.sender should be proxy address
+        assertEq(core.caller(), proxyAddr);
+    }
+
+    function testRemovingUser(address user) public {
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        // Add a random user
+        proxy.addUser(user);
+        assertEq(proxy.users(user), 1);
+
+        // remove user
+        proxy.removeUser(user);
+        assertEq(proxy.users(user), 0);
+
+    }
+
+    function testFailExecuteNotSafe() public {
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
+
+        // set action as a safe target
+        // proxy.safe(address(action));
+
+        // Add this as a user so it can execute
+        proxy.addUser(address(this));
+
+        // action not calling other method
+        bytes memory response = proxy.userExecute(address(action), data);
+
+        // using core
+        data = abi.encodeWithSignature("doAdd(address,uint256,uint256)", address(core), 5,7);
+        response = proxy.userExecute(address(action), data);
+
+        // msg.sender should be proxy address
+        assertEq(core.caller(), proxyAddr);
     }
 
     function testFailExecuteAccessActionStorage() public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
+        // set action as a safe target
+        proxy.safe(address(action));
+
+        // Add this as a user so it can execute
+        proxy.addUser(address(this));
+
         // using action contract storage should fail
         bytes memory data = abi.encodeWithSignature("doAdd(uint256,uint256)", address(core), 5,7);
-        bytes memory response = proxy.execute(address(action), data);
-    }
-
-    function testFailExecuteNotNFTOwner() public {
-        address payable proxyAddr = registry.build();
-        Proxy proxy = Proxy(proxyAddr);
-
-        uint accessToken = proxy.accessToken();
-        registry.transferFrom(msg.sender,address(123), accessToken);
-
-        // using core
-        bytes memory data = abi.encodeWithSignature("doAdd(address,uint256,uint256)", address(core), 5,7);
-
-        // should fail because doesn't own accessToken anymore
-        bytes memory  response = proxy.execute(address(action), data);
-    }
-
-    function testExecuteCode() public {
-        address payable proxyAddr = registry.build();
-        Proxy proxy = Proxy(proxyAddr);
-
-        bytes memory data = abi.encodeWithSignature("getBytes32AndUint()");
-
-        //deploy and call the contracts code
-        (, bytes memory response) = proxy.executeByteCode(testCode, data);
-
-        bytes32 response32;
-        uint responseUint;
-
-        assembly {
-            response32 := mload(add(response, 0x20))
-            responseUint := mload(add(response, 0x40))
-        }
-
-        //verify we got correct response
-        assertEq32(response32, bytes32("Bye"));
-        assertEq(responseUint, uint(150));
+        bytes memory response = proxy.userExecute(address(action), data);
     }
 }
