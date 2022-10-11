@@ -16,38 +16,67 @@
 
 pragma solidity >=0.6.0 < 0.9.0;
 
-import { Title, TitleOwned, TitleLike } from "tinlake-title/title.sol";
+import "tinlake-auth/auth.sol";
 
-abstract contract RegistryLike {
-    function cacheRead(bytes memory _code) public virtual view returns (address);
-    function cacheWrite(bytes memory _code) public virtual returns (address target);
+interface RegistryLike {
+    function cacheRead(bytes memory _code) external view returns (address);
+    function cacheWrite(bytes memory _code) external returns (address target);
 }
 
-// Proxy is a proxy contract that is controlled by a Title NFT (see tinlake-title)
 // The proxy execute methods are copied from ds-proxy/src/proxy.sol:DSProxy
 // (see https://github.com/dapphub/ds-proxy)
-contract Proxy is TitleOwned {
-    uint public         accessToken;
+contract Proxy is Auth {
+
+    mapping (address => uint256) public users;
+    address public target; // safe actions that can be called by users
+
     RegistryLike public registry;
 
-    constructor() TitleOwned(msg.sender) public {
-        registry = RegistryLike(msg.sender);
+    event Safe(address user);
+    event UserAdded(address user);
+    event UserRemoved(address user);
+
+    modifier user {
+        require(users[msg.sender] == 1, "not-authorized");
+        _;
     }
 
-    function init(uint accessToken_) public {
-        // parameter accessToken_: always > 0
-        require(accessToken == 0);
-        accessToken = accessToken_;
+    constructor() {
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
-    function execute(address _target, bytes memory _data)
+    function safe(address _target) external auth {
+        target = _target;
+        emit Safe(_target);
+    }
+
+    function addUser(address usr) external auth {
+        users[usr] = 1;
+        emit UserAdded(usr);
+    }
+
+    function removeUser(address usr) external auth {
+        users[usr] = 0;
+        emit UserRemoved(usr);
+    }
+
+    function userExecute(address _target, bytes memory _data)
     public
     payable
-    owner(accessToken)
+    user
     returns (bytes memory response)
     {
         require(_target != address(0), "tinlake/proxy-target-address-required");
+        require(target == _target, "tinlake/proxy-target-not-safe");
+        execute(_target, _data); // matches current proxy implementation
+     }
 
+    
+    function execute(address _target, bytes memory _data)
+    internal
+    returns (bytes memory response)
+    {
         // call contract in current context
         assembly {
             let succeeded := delegatecall(sub(gas(), 5000), _target, add(_data, 0x20), mload(_data), 0, 0)
@@ -65,50 +94,13 @@ contract Proxy is TitleOwned {
             }
         }
     }
-
-    function executeByteCode(bytes memory _code, bytes memory _data)
-    public
-    payable
-    owner(accessToken)
-    returns (address target, bytes memory response)
-    {
-        target = registry.cacheRead(_code);
-        if (target == address(0)) {
-            // deploy contract & store its address in cache
-            target = registry.cacheWrite(_code);
-        }
-
-        response = execute(target, _data);
-    }
 }
 
 // ProxyRegistry
 // This factory deploys new proxy instances through build()
-// Deployed proxy addresses are logged
-contract ProxyRegistry is Title {
+contract ProxyRegistry {
 
-    bytes32 proxyCodeHash;
-    bytes public proxyCode;
-
-    event Created(address indexed sender, address indexed owner, address proxy, uint tokenId);
-
-    constructor() Title("Tinlake Proxy Access Token", "TAAT") public {
-        proxyCode = type(Proxy).creationCode;
-        proxyCodeHash = keccak256(abi.encodePacked(proxyCode));
-    }
-
-    // calculates the proxy address based on the accessToken
-    function proxies(uint accessToken) public view returns(address) {
-        // create2 address calculation
-        // keccak256(0xff ++ deployingAddr ++ salt ++ keccak256(bytecode))[12:]
-
-        // Using a constructor without parameters results in the same proxyCodeHash for all proxies
-        // expensive rehashing not required. Not having to hash the entire contract byte code saves around 80k gas.
-        bytes32 _data = keccak256(
-            abi.encodePacked(bytes1(0xff), address(this), keccak256(abi.encodePacked(accessToken)), proxyCodeHash)
-        );
-        return address(bytes20(_data << 96));
-    }
+    event Created(address indexed sender, address indexed owner, address proxy);
 
     // deploys a new proxy instance
     function build() public returns (address payable proxy) {
@@ -117,40 +109,13 @@ contract ProxyRegistry is Title {
 
     // deploys a new proxy instance
     // sets custom owner of proxy by issuing an Title NFT
-    function build(address owner) public returns (address payable proxy) {
-        uint accessToken = _issue(owner);
-        bytes32 salt = keccak256(abi.encodePacked(accessToken));
+    function build(address owner) public returns (address payable proxyAddr) {
+        Proxy proxy = new Proxy();
+        // add first owner
+        proxy.rely(owner);
 
-        bytes memory code = proxyCode;
-        assembly {
-            proxy := create2(0, add(code, 0x20), mload(code), salt)
-            if iszero(extcodesize(proxy)) { revert(0, 0) }
-        }
-        // init proxy contract
-        Proxy(proxy).init(uint(accessToken));
-
-        emit Created(msg.sender, owner, proxy, accessToken);
-    }
-
-    // --- Cache ---
-    // Copied from ds-proxy/src/proxy.sol:DSProxyCache
-    mapping (bytes32 => address) public cache;
-
-    function cacheRead(bytes memory _code) public view returns (address) {
-        bytes32 hash = keccak256(_code);
-        return cache[hash];
-    }
-
-    function cacheWrite(bytes memory _code) public returns (address target) {
-        assembly {
-            target := create(0, add(_code, 0x20), mload(_code))
-            switch iszero(extcodesize(target))
-            case 1 {
-                // throw if contract failed to deploy
-                revert(0, 0)
-            }
-        }
-        bytes32 hash = keccak256(_code);
-        cache[hash] = target;
+        emit Created(msg.sender, owner, address(proxy));
+        
+        return payable(address(proxy));
     }
 }
