@@ -1,9 +1,8 @@
-pragma solidity >=0.5.15 <0.6.0;
+pragma solidity >=0.6.0 < 0.9.0;
 
 import "forge-std/Test.sol";
-import 
 
-import "../proxy.sol";
+import "../src/proxy.sol";
 
 
 contract SimpleCore {
