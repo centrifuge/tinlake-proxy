@@ -105,7 +105,7 @@ contract ProxyTest is Test {
         // proxy.addUser(address(this));
 
         // execute action that does not call core contract
-        vm.expectRevert(bytes("tinlake/not-authorized"));
+        vm.expectRevert(bytes("tinlake/user-not-authorized"));
         bytes memory response = proxy.userExecute(address(action), data);
     }
 

@@ -16,32 +16,49 @@
 
 pragma solidity >=0.6.0 <0.8.0;
 
-import "tinlake-auth/auth.sol";
-
 interface RegistryLike {
     function cacheRead(bytes memory _code) external view returns (address);
     function cacheWrite(bytes memory _code) external returns (address target);
 }
 
-contract Proxy is Auth {
+contract Proxy {
 
+    mapping(address => uint256) public wards;
     mapping (address => uint256) public users;
-    address public target; // safe actions that can be called by users
+    address public target; // target contract that can be called by users
 
     RegistryLike public registry;
 
     event Safe(address user);
     event UserAdded(address user);
     event UserRemoved(address user);
+    event Rely(address indexed user);
+    event Deny(address indexed user);
 
     modifier user {
-        require(users[msg.sender] == 1, "tinlake/not-authorized");
+        require(users[msg.sender] == 1, "tinlake/user-not-authorized");
+        _;
+    }
+
+    modifier auth {
+        require(wards[msg.sender] == 1, "tinlake/ward-not-authorized");
         _;
     }
 
     constructor() {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
+    }
+
+    // --- Administration ---
+    function rely(address usr) external auth {
+        wards[usr] = 1;
+        emit Rely(usr);
+    }
+
+    function deny(address usr) external auth {
+        wards[usr] = 0;
+        emit Deny(usr);
     }
 
     function safe(address _target) external auth {
@@ -59,6 +76,7 @@ contract Proxy is Auth {
         emit UserRemoved(usr);
     }
 
+    // --- Proxy ---
     function userExecute(address _target, bytes memory _data)
     public
     payable
