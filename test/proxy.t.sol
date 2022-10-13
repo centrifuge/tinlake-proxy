@@ -15,6 +15,7 @@ contract SimpleCore {
 
 contract SimpleAction {
     SimpleCore core;
+
     constructor(address core_) public {
         core = SimpleCore(core_);
     }
@@ -36,7 +37,7 @@ contract SimpleAction {
     }
 }
 
-contract ProxyTest is DSTest {
+contract ProxyTest is Test {
     ProxyRegistry registry;
     SimpleCore    core;
     SimpleAction  action;
@@ -53,6 +54,19 @@ contract ProxyTest is DSTest {
         address payable first = registry.build();
         address payable second = registry.build();
         assertTrue(first != second);
+    }
+
+    function testAddRemoveUser(address user) public {
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        // Add a random user
+        proxy.addUser(user);
+        assertEq(proxy.users(user), 1);
+
+        // remove user
+        proxy.removeUser(user);
+        assertEq(proxy.users(user), 0);
     }
 
     function testExecute() public {
@@ -78,7 +92,7 @@ contract ProxyTest is DSTest {
         assertEq(core.caller(), proxyAddr);
     }
 
-    function testFailExecuteNotUser() public {
+    function testExecuteNotUserFails() public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
@@ -91,31 +105,11 @@ contract ProxyTest is DSTest {
         // proxy.addUser(address(this));
 
         // execute action that does not call core contract
+        vm.expectRevert(bytes("tinlake/not-authorized"));
         bytes memory response = proxy.userExecute(address(action), data);
-
-        // execute action that does call core contract
-        data = abi.encodeWithSignature("doAdd(address,uint256,uint256)", address(core), 5,7);
-        response = proxy.userExecute(address(action), data);
-
-        // msg.sender should be proxy address
-        assertEq(core.caller(), proxyAddr);
     }
 
-    function testRemovingUser(address user) public {
-        address payable proxyAddr = registry.build();
-        Proxy proxy = Proxy(proxyAddr);
-
-        // Add a random user
-        proxy.addUser(user);
-        assertEq(proxy.users(user), 1);
-
-        // remove user
-        proxy.removeUser(user);
-        assertEq(proxy.users(user), 0);
-
-    }
-
-    function testFailExecuteNotSafe() public {
+    function testExecuteNotSafeTargetFails() public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
@@ -128,14 +122,8 @@ contract ProxyTest is DSTest {
         proxy.addUser(address(this));
 
         // execute action that does not call core contract
+        vm.expectRevert(bytes("tinlake/proxy-target-not-safe"));
         bytes memory response = proxy.userExecute(address(action), data);
-
-        // execute action that does call core contract
-        data = abi.encodeWithSignature("doAdd(address,uint256,uint256)", address(core), 5,7);
-        response = proxy.userExecute(address(action), data);
-
-        // msg.sender should be proxy address
-        assertEq(core.caller(), proxyAddr);
     }
 
     function testFailExecuteAccessActionStorage() public {
@@ -149,7 +137,7 @@ contract ProxyTest is DSTest {
         proxy.addUser(address(this));
 
         // using action contract storage should fail
-        bytes memory data = abi.encodeWithSignature("doAdd(uint256,uint256)", address(core), 5,7);
+        bytes memory data = abi.encodeWithSignature("doAdd(uint256,uint256)", 5,7);
         bytes memory response = proxy.userExecute(address(action), data);
     }
 }

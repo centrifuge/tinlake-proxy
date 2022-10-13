@@ -35,7 +35,7 @@ contract Proxy is Auth {
     event UserRemoved(address user);
 
     modifier user {
-        require(users[msg.sender] == 1, "not-authorized");
+        require(users[msg.sender] == 1, "tinlake/not-authorized");
         _;
     }
 
