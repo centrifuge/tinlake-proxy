@@ -29,19 +29,19 @@ contract Proxy {
 
     RegistryLike public registry;
 
-    event Safe(address user);
     event UserAdded(address user);
     event UserRemoved(address user);
     event Rely(address indexed user);
     event Deny(address indexed user);
+    event File(bytes32 what, address _target);
 
     modifier user {
-        require(users[msg.sender] == 1, "tinlake/user-not-authorized");
+        require(users[msg.sender] == 1, "TinlakeProxy/user-not-authorized");
         _;
     }
 
     modifier auth {
-        require(wards[msg.sender] == 1, "tinlake/ward-not-authorized");
+        require(wards[msg.sender] == 1, "TinlakeProxy/ward-not-authorized");
         _;
     }
 
@@ -61,11 +61,6 @@ contract Proxy {
         emit Deny(usr);
     }
 
-    function safe(address _target) external auth {
-        target = _target;
-        emit Safe(_target);
-    }
-
     function addUser(address usr) external auth {
         users[usr] = 1;
         emit UserAdded(usr);
@@ -76,6 +71,12 @@ contract Proxy {
         emit UserRemoved(usr);
     }
 
+    function file(bytes32 what, address data) external auth {
+        if (what == "target") target = data;
+        else revert("TinlakeProxy/file-unrecognized-param");
+        emit File(what, data);
+    }
+
     // --- Proxy ---
     function userExecute(address _target, bytes memory _data)
     public
@@ -83,8 +84,8 @@ contract Proxy {
     user
     returns (bytes memory response)
     {
-        require(_target != address(0), "tinlake/proxy-target-address-required");
-        require(target == _target, "tinlake/proxy-target-not-safe");
+        require(_target != address(0), "TinlakeProxy/target-address-required");
+        require(target == _target, "TinlakeProxy/target-not-authorized");
         execute(_target, _data);
      }
 
@@ -112,8 +113,7 @@ contract Proxy {
     }
 }
 
-// ProxyRegistry
-// This factory deploys new proxy instances through build()
+// ProxyRegistry: This factory deploys new proxy instances through build()
 contract ProxyRegistry {
 
     event Created(address indexed sender, address indexed owner, address proxy);

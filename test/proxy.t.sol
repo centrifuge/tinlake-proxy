@@ -76,7 +76,7 @@ contract ProxyTest is Test {
         bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
 
         // set action as a safe target
-        proxy.safe(address(action));
+        proxy.file("target", address(action));
 
         // Add this as a user so it can execute
         proxy.addUser(address(this));
@@ -99,13 +99,13 @@ contract ProxyTest is Test {
         bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
 
         // set action as a safe target
-        proxy.safe(address(action));
+        proxy.file("target", address(action));
 
         // Add this as a user so it can execute
         // proxy.addUser(address(this));
 
         // execute action that does not call core contract
-        vm.expectRevert(bytes("tinlake/user-not-authorized"));
+        vm.expectRevert(bytes("TinlakeProxy/user-not-authorized"));
         bytes memory response = proxy.userExecute(address(action), data);
     }
 
@@ -116,13 +116,13 @@ contract ProxyTest is Test {
         bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
 
         // set action as a safe target
-        // proxy.safe(address(action));
+        // proxy.file("target", address(action));
 
         // Add this as a user so it can execute
         proxy.addUser(address(this));
 
         // execute action that does not call core contract
-        vm.expectRevert(bytes("tinlake/proxy-target-not-safe"));
+        vm.expectRevert(bytes("TinlakeProxy/target-not-authorized"));
         bytes memory response = proxy.userExecute(address(action), data);
     }
 
@@ -131,7 +131,7 @@ contract ProxyTest is Test {
         Proxy proxy = Proxy(proxyAddr);
 
         // set action as a safe target
-        proxy.safe(address(action));
+        proxy.file("target", address(action));
 
         // Add this as a user so it can execute
         proxy.addUser(address(this));
