@@ -15,5 +15,3 @@ fuzz_runs = 1000
 fuzz_runs = 50000
 fuzz_max_global_rejects = 262144
 fuzz_max_local_rejects = 4096
-
-# See more config options https://github.com/foundry-rs/foundry/tree/master/config
