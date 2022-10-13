@@ -38,4 +38,4 @@ jobs:
           forge test -vvv
         id: test
         env:
-          FOUNDRY_PROFILE: push_to_master
+          FOUNDRY_PROFILE: push_to_main
