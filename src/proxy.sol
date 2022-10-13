@@ -18,11 +18,10 @@ pragma solidity >=0.6.0 <0.8.0;
 
 import { Title, TitleOwned, TitleLike } from "tinlake-title/title.sol";
 
-abstract contract RegistryLike {
-    function cacheRead(bytes memory _code) public virtual view returns (address);
-    function cacheWrite(bytes memory _code) public virtual returns (address target);
+interface RegistryLike {
+    function cacheRead(bytes memory _code) external view returns (address);
+    function cacheWrite(bytes memory _code) external returns (address target);
 }
-
 // Proxy is a proxy contract that is controlled by a Title NFT (see tinlake-title)
 // The proxy execute methods are copied from ds-proxy/src/proxy.sol:DSProxy
 // (see https://github.com/dapphub/ds-proxy)
