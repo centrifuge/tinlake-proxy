@@ -61,7 +61,7 @@ contract ProxyTest is Test {
         proxy.file("target", randomTarget);
         assertEq(proxy.target(), randomTarget);
 
-        // deny user and execute an auth function which reverts
+        // deny user and execute various auth functions which all revert
         proxy.deny(user);
         assertEq(proxy.wards(user), 0);
         vm.expectRevert(bytes("TinlakeProxy/ward-not-authorized"));
@@ -69,16 +69,63 @@ contract ProxyTest is Test {
         proxy.file("target", randomTarget);
     }
 
+    function testUnauthorizedRelyFails(address randomUser) public {
+        vm.assume(randomUser != address(this));
+        vm.assume(randomUser != address(registry));
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        vm.expectRevert(bytes("TinlakeProxy/ward-not-authorized"));
+        vm.prank(randomUser);
+        proxy.rely(randomUser);
+    }
+
+    function testUnauthorizedDenyFails(address randomUser) public {
+        vm.assume(randomUser != address(this));
+        vm.assume(randomUser != address(registry));
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        vm.expectRevert(bytes("TinlakeProxy/ward-not-authorized"));
+        vm.prank(randomUser);
+        proxy.deny(address(this));
+    }
+
+    function testUnauthorizedAddUserFails(address randomUser) public {
+        vm.assume(randomUser != address(this));
+        vm.assume(randomUser != address(registry));
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        vm.expectRevert(bytes("TinlakeProxy/ward-not-authorized"));
+        vm.prank(randomUser);
+        proxy.addUser(address(this));
+    }
+
+    function testUnauthorizedRemoveUserFails(address randomUser) public {
+        vm.assume(randomUser != address(this));
+        vm.assume(randomUser != address(registry));
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+        proxy.addUser(address(this));
+
+        vm.expectRevert(bytes("TinlakeProxy/ward-not-authorized"));
+        vm.prank(randomUser);
+        proxy.addUser(address(this));
+    }
+
     function testBuildProxy(address randomUser) public {
         vm.prank(randomUser);
         address payable first = registry.build();
-        vm.prank(randomUser);
-        address payable second = registry.build();
-        assertTrue(first != second);
         assertEq(Proxy(first).wards(randomUser), 1);
-        assertEq(Proxy(second).wards(randomUser), 1);
         assertEq(Proxy(first).users(randomUser), 0);
-        assertEq(Proxy(second).users(randomUser), 0);
+    }
+
+    function testBuildProxyWithAddress(address randomUser) public {
+        vm.assume(randomUser != address(registry));
+        address payable first = registry.build(randomUser);
+        assertEq(Proxy(first).wards(address(this)), 0);
+        assertEq(Proxy(first).wards(randomUser), 1);
     }
 
     function testProxyOwnerCantExecute(address randomUser) public {
