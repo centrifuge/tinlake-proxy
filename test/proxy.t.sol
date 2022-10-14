@@ -50,6 +50,25 @@ contract ProxyTest is Test {
         action = new SimpleAction(address(core));
     }
 
+    function testAuth(address user, address randomTarget) public {
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+        
+        // rely user and execute an auth function which succeeds
+        proxy.rely(user);
+        assertEq(proxy.wards(user), 1);
+        vm.prank(user);
+        proxy.file("target", randomTarget);
+        assertEq(proxy.target(), randomTarget);
+
+        // deny user and execute an auth function which reverts
+        proxy.deny(user);
+        assertEq(proxy.wards(user), 0);
+        vm.expectRevert(bytes("TinlakeProxy/ward-not-authorized"));
+        vm.prank(user);
+        proxy.file("target", randomTarget);
+    }
+
     function testBuildProxy() public {
         address payable first = registry.build();
         address payable second = registry.build();
@@ -59,14 +78,31 @@ contract ProxyTest is Test {
     function testAddRemoveUser(address user) public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
+        proxy.file("target", address(action));
+        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
 
         // Add a random user
         proxy.addUser(user);
         assertEq(proxy.users(user), 1);
 
+        // test executing target actions with user
+        vm.prank(user);
+        proxy.userExecute(address(action), data);
+
         // remove user
         proxy.removeUser(user);
         assertEq(proxy.users(user), 0);
+        vm.prank(user);
+        vm.expectRevert(bytes("TinlakeProxy/user-not-authorized"));
+        proxy.userExecute(address(action), data);
+    }
+
+    function testAddTarget(address _target) public {
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        proxy.file("target", _target);
+        assertEq(proxy.target(), _target);
     }
 
     function testExecute() public {
@@ -90,6 +126,23 @@ contract ProxyTest is Test {
 
         // msg.sender should be proxy address
         assertEq(core.caller(), proxyAddr);
+    }
+
+    function testFailExecuteWithBadData() public {
+        address payable proxyAddr = registry.build();
+        Proxy proxy = Proxy(proxyAddr);
+
+        // use non-existant function call
+        bytes memory data = abi.encodeWithSignature("inlineSubtract(uint256,uint256)", 5,7);
+
+        // set action as a safe target
+        proxy.file("target", address(action));
+
+        // Add this as a user so it can execute
+        proxy.addUser(address(this));
+
+        // execute action that does not call core contract
+        bytes memory response = proxy.userExecute(address(action), data);
     }
 
     function testExecuteNotUserFails() public {
