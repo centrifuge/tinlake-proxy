@@ -123,6 +123,7 @@ contract ProxyTest is Test {
 
     function testBuildProxyWithAddress(address randomUser) public {
         vm.assume(randomUser != address(registry));
+        vm.assume(randomUser != address(this));
         address payable first = registry.build(randomUser);
         assertEq(Proxy(first).wards(address(this)), 0);
         assertEq(Proxy(first).wards(randomUser), 1);
