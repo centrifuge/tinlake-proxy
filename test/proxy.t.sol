@@ -182,7 +182,7 @@ contract ProxyTest is Test {
         assertEq(proxy.target(), _target);
     }
 
-    function testExecute(address user) public {
+    function testUserExecute(address user) public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
@@ -207,7 +207,7 @@ contract ProxyTest is Test {
         assertEq(core.caller(), proxyAddr);
     }
 
-    function testFailExecuteWithBadData(address user) public {
+    function testUserExecuteWithBadDataFails(address user) public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
@@ -222,10 +222,11 @@ contract ProxyTest is Test {
 
         // execute action that does not call core contract
         vm.prank(user);
+        vm.expectRevert();
         bytes memory response = proxy.userExecute(address(action), data);
     }
 
-    function testExecuteNotUserFails() public {
+    function testUserExecuteNotUserFails() public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
@@ -234,22 +235,16 @@ contract ProxyTest is Test {
         // set action as a safe target
         proxy.file("target", address(action));
 
-        // Add this as a user so it can execute
-        // proxy.addUser(address(this));
-
         // execute action that does not call core contract
         vm.expectRevert(bytes("TinlakeProxy/user-not-authorized"));
         bytes memory response = proxy.userExecute(address(action), data);
     }
 
-    function testExecuteNotSafeTargetFails(address user) public {
+    function testUserExecuteNotSafeTargetFails(address user) public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
         bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
-
-        // set action as a safe target
-        // proxy.file("target", address(action));
 
         // Add this as a user so it can execute
         proxy.addUser(user);
@@ -260,7 +255,7 @@ contract ProxyTest is Test {
         bytes memory response = proxy.userExecute(address(action), data);
     }
 
-    function testFailExecuteAccessActionStorage(address user) public {
+    function testUserExecuteAccessActionStorageFails(address user) public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
@@ -273,6 +268,7 @@ contract ProxyTest is Test {
         // using action contract storage should fail
         bytes memory data = abi.encodeWithSignature("doAdd(uint256,uint256)", 5,7);
         vm.prank(user);
+        vm.expectRevert();
         bytes memory response = proxy.userExecute(address(action), data);
     }
 }
