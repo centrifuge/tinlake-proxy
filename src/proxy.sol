@@ -24,7 +24,7 @@ interface RegistryLike {
 contract Proxy {
 
     mapping(address => uint256) public wards;
-    mapping (address => uint256) public users;
+    mapping(address => uint256) public users;
     address public target; // target contract that can be called by users
 
     RegistryLike public registry;
