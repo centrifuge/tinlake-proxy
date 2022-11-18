@@ -28,8 +28,6 @@ contract Proxy {
     mapping(address => uint256) public users;
     address public target; // target contract that can be called by users
 
-    RegistryLike public registry;
-
     event UserAdded(address user);
     event UserRemoved(address user);
     event Rely(address indexed user);
