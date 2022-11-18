@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity ^0.8.0;
+
+import {Address} from "openzeppelin-contracts/utils/Address.sol";
 
 interface RegistryLike {
     function cacheRead(bytes memory _code) external view returns (address);
@@ -22,7 +24,6 @@ interface RegistryLike {
 }
 
 contract Proxy {
-
     mapping(address => uint256) public wards;
     mapping(address => uint256) public users;
     address public target; // target contract that can be called by users
@@ -35,12 +36,12 @@ contract Proxy {
     event Deny(address indexed user);
     event File(bytes32 what, address _target);
 
-    modifier user {
+    modifier user() {
         require(users[msg.sender] == 1, "TinlakeProxy/user-not-authorized");
         _;
     }
 
-    modifier auth {
+    modifier auth() {
         require(wards[msg.sender] == 1, "TinlakeProxy/ward-not-authorized");
         _;
     }
@@ -78,44 +79,19 @@ contract Proxy {
     }
 
     // --- Proxy ---
-    function userExecute(address _target, bytes memory _data)
-    public
-    payable
-    user
-    returns (bytes memory response)
-    {
+    function userExecute(address _target, bytes memory _data) public payable user returns (bytes memory response) {
         require(_target != address(0), "TinlakeProxy/target-address-required");
         require(target == _target, "TinlakeProxy/target-not-authorized");
-        execute(_target, _data);
-     }
+        return _execute(_target, _data);
+    }
 
-    
-    function execute(address _target, bytes memory _data)
-    internal
-    returns (bytes memory response)
-    {
-        // call contract in current context
-        assembly {
-            let succeeded := delegatecall(sub(gas(), 5000), _target, add(_data, 0x20), mload(_data), 0, 0)
-            let size := returndatasize()
-
-            response := mload(0x40)
-            mstore(0x40, add(response, and(add(add(size, 0x20), 0x1f), not(0x1f))))
-            mstore(response, size)
-            returndatacopy(add(response, 0x20), 0, size)
-
-            switch iszero(succeeded)
-            case 1 {
-            // throw if delegatecall failed
-                revert(add(response, 0x20), size)
-            }
-        }
+    function _execute(address _target, bytes memory _data) internal returns (bytes memory response) {
+        return Address.functionDelegateCall(_target, _data, "TinlakeProxy/delegate-call-failed");
     }
 }
 
 // ProxyRegistry: This factory deploys new proxy instances through build()
 contract ProxyRegistry {
-
     event Created(address indexed sender, address indexed owner, address proxy);
 
     // deploys a new proxy instance
@@ -126,12 +102,12 @@ contract ProxyRegistry {
     // deploys a new proxy instance
     function build(address owner) public returns (address payable proxyAddr) {
         Proxy proxy = new Proxy();
-        
+
         // add first owner
         proxy.rely(owner);
 
         emit Created(msg.sender, owner, address(proxy));
-        
+
         return payable(address(proxy));
     }
 }

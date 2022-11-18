@@ -1,15 +1,14 @@
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "../src/proxy.sol";
-
 
 contract SimpleCore {
     address public caller;
 
     function add(uint256 a, uint256 b) public returns (uint256) {
         caller = msg.sender;
-        return a+b;
+        return a + b;
     }
 }
 
@@ -21,26 +20,26 @@ contract SimpleAction {
     }
 
     function inlineAdd(uint256 a, uint256 b) public returns (uint256) {
-        return a+b;
+        return a + b;
     }
 
     function doAdd(address core_, uint256 a, uint256 b) public returns (uint256) {
-        return SimpleCore(core_).add(a,b);
+        return SimpleCore(core_).add(a, b);
     }
 
     function doAdd(uint256 a, uint256 b) public returns (uint256) {
-        return core.add(a,b);
+        return core.add(a, b);
     }
 
-    function coreAddr() public returns(address) {
+    function coreAddr() public returns (address) {
         return address(core);
     }
 }
 
 contract ProxyTest is Test {
     ProxyRegistry registry;
-    SimpleCore    core;
-    SimpleAction  action;
+    SimpleCore core;
+    SimpleAction action;
 
     function setUp() public {
         registry = new ProxyRegistry();
@@ -53,7 +52,7 @@ contract ProxyTest is Test {
     function testAuth(address user, address randomTarget) public {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
-        
+
         // rely user and execute an auth function which succeeds
         proxy.rely(user);
         assertEq(proxy.wards(user), 1);
@@ -134,7 +133,7 @@ contract ProxyTest is Test {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
-        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
+        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5, 7);
 
         // set action as a safe target
         vm.prank(randomUser);
@@ -156,7 +155,7 @@ contract ProxyTest is Test {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
         proxy.file("target", address(action));
-        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
+        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5, 7);
 
         // Add a random user
         proxy.addUser(user);
@@ -186,7 +185,7 @@ contract ProxyTest is Test {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
-        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
+        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5, 7);
 
         // set action as a safe target
         proxy.file("target", address(action));
@@ -198,8 +197,16 @@ contract ProxyTest is Test {
         vm.prank(user);
         bytes memory response = proxy.userExecute(address(action), data);
 
+        // check that the response is correct
+        assertEq(response.length, 32);
+        uint256 result;
+        assembly {
+            result := mload(add(response, 0x20))
+        }
+        assertEq(result, 12);
+
         // execute action that does call core contract
-        data = abi.encodeWithSignature("doAdd(address,uint256,uint256)", address(core), 5,7);
+        data = abi.encodeWithSignature("doAdd(address,uint256,uint256)", address(core), 5, 7);
         vm.prank(user);
         response = proxy.userExecute(address(action), data);
 
@@ -212,7 +219,7 @@ contract ProxyTest is Test {
         Proxy proxy = Proxy(proxyAddr);
 
         // use non-existant function call
-        bytes memory data = abi.encodeWithSignature("inlineSubtract(uint256,uint256)", 5,7);
+        bytes memory data = abi.encodeWithSignature("inlineSubtract(uint256,uint256)", 5, 7);
 
         // set action as a safe target
         proxy.file("target", address(action));
@@ -230,7 +237,7 @@ contract ProxyTest is Test {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
-        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
+        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5, 7);
 
         // set action as a safe target
         proxy.file("target", address(action));
@@ -244,7 +251,7 @@ contract ProxyTest is Test {
         address payable proxyAddr = registry.build();
         Proxy proxy = Proxy(proxyAddr);
 
-        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5,7);
+        bytes memory data = abi.encodeWithSignature("inlineAdd(uint256,uint256)", 5, 7);
 
         // Add this as a user so it can execute
         proxy.addUser(user);
@@ -266,7 +273,7 @@ contract ProxyTest is Test {
         proxy.addUser(user);
 
         // using action contract storage should fail
-        bytes memory data = abi.encodeWithSignature("doAdd(uint256,uint256)", 5,7);
+        bytes memory data = abi.encodeWithSignature("doAdd(uint256,uint256)", 5, 7);
         vm.prank(user);
         vm.expectRevert();
         bytes memory response = proxy.userExecute(address(action), data);
