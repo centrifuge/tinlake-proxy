@@ -98,7 +98,7 @@ contract ProxyTest is Test {
 
         vm.expectRevert(bytes("TinlakeProxy/ward-not-authorized"));
         vm.prank(randomUser);
-        proxy.removeUser(address(this));
+        proxy.addUser(address(this));
     }
 
     function testUnauthorizedRemoveUserFails(address randomUser) public {
@@ -110,7 +110,7 @@ contract ProxyTest is Test {
 
         vm.expectRevert(bytes("TinlakeProxy/ward-not-authorized"));
         vm.prank(randomUser);
-        proxy.addUser(address(this));
+        proxy.removeUser(address(this));
     }
 
     function testBuildProxy(address randomUser) public {
