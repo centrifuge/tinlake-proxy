@@ -50,7 +50,7 @@ contract Proxy {
     }
 
     // --- Administration ---
-    function rely(address usr) external auth {
+    function rely(address usr) external auth  {
         wards[usr] = 1;
         emit Rely(usr);
     }
@@ -65,7 +65,7 @@ contract Proxy {
         emit UserAdded(usr);
     }
 
-    function removeUser(address usr) external auth {
+    function removeUser(address usr) external auth  {
         users[usr] = 0;
         emit UserRemoved(usr);
     }

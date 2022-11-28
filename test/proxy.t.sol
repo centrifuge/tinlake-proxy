@@ -15,11 +15,11 @@ contract SimpleCore {
 contract SimpleAction {
     SimpleCore core;
 
-    constructor(address core_) public {
+    constructor(address core_)  {
         core = SimpleCore(core_);
     }
 
-    function inlineAdd(uint256 a, uint256 b) public returns (uint256) {
+    function inlineAdd(uint256 a, uint256 b) public pure returns (uint256) {
         return a + b;
     }
 
@@ -31,7 +31,7 @@ contract SimpleAction {
         return core.add(a, b);
     }
 
-    function coreAddr() public returns (address) {
+    function coreAddr() public view returns (address) {
         return address(core);
     }
 }
@@ -110,7 +110,7 @@ contract ProxyTest is Test {
 
         vm.expectRevert(bytes("TinlakeProxy/ward-not-authorized"));
         vm.prank(randomUser);
-        proxy.addUser(address(this));
+        proxy.removeUser(address(this));
     }
 
     function testBuildProxy(address randomUser) public {
@@ -230,7 +230,7 @@ contract ProxyTest is Test {
         // execute action that does not call core contract
         vm.prank(user);
         vm.expectRevert();
-        bytes memory response = proxy.userExecute(address(action), data);
+        proxy.userExecute(address(action), data);
     }
 
     function testUserExecuteNotUserFails() public {
@@ -244,7 +244,7 @@ contract ProxyTest is Test {
 
         // execute action that does not call core contract
         vm.expectRevert(bytes("TinlakeProxy/user-not-authorized"));
-        bytes memory response = proxy.userExecute(address(action), data);
+        proxy.userExecute(address(action), data);
     }
 
     function testUserExecuteNotSafeTargetFails(address user) public {
@@ -259,7 +259,7 @@ contract ProxyTest is Test {
         // execute action that does not call core contract
         vm.prank(user);
         vm.expectRevert(bytes("TinlakeProxy/target-not-authorized"));
-        bytes memory response = proxy.userExecute(address(action), data);
+        proxy.userExecute(address(action), data);
     }
 
     function testUserExecuteAccessActionStorageFails(address user) public {
@@ -276,6 +276,6 @@ contract ProxyTest is Test {
         bytes memory data = abi.encodeWithSignature("doAdd(uint256,uint256)", 5, 7);
         vm.prank(user);
         vm.expectRevert();
-        bytes memory response = proxy.userExecute(address(action), data);
+        proxy.userExecute(address(action), data);
     }
 }
