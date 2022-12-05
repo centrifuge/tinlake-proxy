@@ -46,9 +46,13 @@ contract Proxy {
         _;
     }
 
-    constructor() {
-        wards[msg.sender] = 1;
-        emit Rely(msg.sender);
+    constructor(address owner, address usr, address target_) {
+        wards[owner] = 1;
+        emit Rely(owner);
+        users[usr] = 1;
+        emit UserAdded(usr);
+        target = target_;
+        emit File("target", target_);
     }
 
     // --- Administration ---
@@ -95,16 +99,13 @@ contract ProxyRegistry {
     event Created(address indexed sender, address indexed owner, address proxy);
 
     // deploys a new proxy instance
-    function build() public returns (address payable proxy) {
-        proxy = build(msg.sender);
+    function build(address usr, address target) public returns (address payable proxy) {
+        proxy = build(msg.sender, usr, target);
     }
 
     // deploys a new proxy instance
-    function build(address owner) public returns (address payable proxyAddr) {
-        Proxy proxy = new Proxy();
-
-        // add first owner
-        proxy.rely(owner);
+    function build(address owner, address usr, address target) public returns (address payable proxyAddr) {
+        Proxy proxy = new Proxy(owner, usr, target);
 
         emit Created(msg.sender, owner, address(proxy));
 
