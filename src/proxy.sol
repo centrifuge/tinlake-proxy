@@ -90,7 +90,7 @@ contract Proxy {
     }
 
     function _execute(address _target, bytes memory _data) internal returns (bytes memory response) {
-        return Address.functionDelegateCall(_target, _data, "TinlakeProxy/delegate-call-failed");
+        return Address.functionDelegateCall(_target, _data);
     }
 }
 
